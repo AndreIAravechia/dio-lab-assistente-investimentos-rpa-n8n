@@ -1,0 +1,305 @@
+{
+  "name": "Desfio- Criando um Processo de RPA com N8N e Python",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "clientes-investimento",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -432,
+        -48
+      ],
+      "id": "90ed0e70-b3c7-4ef0-aca0-99094f474994",
+      "name": "Webhook",
+      "webhookId": "df50b9c8-650a-4ec8-a4a6-5f84855636d9"
+    },
+    {
+      "parameters": {
+        "url": "https://digitalinnovationone.github.io/dio-lab-assistente-investimentos-rpa-n8n/data.csv",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -224,
+        -48
+      ],
+      "id": "12e517e9-3981-441c-acf8-3858fcb3eab9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        -16,
+        -48
+      ],
+      "id": "86bfae6e-afb6-46a1-845a-9ca25fbce7fd",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Pega os dados que vieram do Webhook\nconst webhookData = $('Webhook').first().json;\n\n// Garante que pegamos a lista de clientes\nconst clientes = Array.isArray(webhookData.body) \n  ? webhookData.body \n  : (Array.isArray(webhookData) ? webhookData : [webhookData]);\n\n// 2. Pega os investimentos do arquivo CSV\nconst investimentos = $input.all().map(item => item.json);\n\n// 3. Função que atua como Consultor de Investimentos (gerando mensagens inteligentes)\nfunction gerarMensagemConsultor(nome, perfil, saldo, produto, rentabilidade) {\n  const primeiroNome = nome.split(' ')[0];\n\n  if (perfil.toLowerCase() === 'conservador') {\n    return `Olá, ${primeiroNome}! Analisamos seu momento financeiro e, com base no seu perfil Conservador e saldo de ${saldo}, priorizamos a máxima segurança e liquidez. Recomendamos aplicar em ${produto}, com retorno de ${rentabilidade}, garantindo proteção patrimonial e previsibilidade. Conte conosco para fazer seu dinheiro render com tranquilidade!`;\n  } else if (perfil.toLowerCase() === 'moderado') {\n    return `Olá, ${primeiroNome}! Seu perfil Moderado busca o equilíbrio ideal entre segurança e valorização do seu saldo disponível de ${saldo}. Indicamos o investimento em ${produto}, com rendimento de ${rentabilidade}, que potencializa seus ganhos sem abrir mão de estabilidade. Estamos à disposição para estruturar sua carteira!`;\n  } else {\n    return `Olá, ${primeiroNome}! Identificamos seu perfil Arrojado e sua prontidão para buscar as melhores oportunidades de rentabilidade com seu capital de ${saldo}. A nossa melhor recomendação para você é ${produto} (${rentabilidade}), permitindo capturar o potencial de alta dos mercados. Vamos juntos acelerar seu crescimento financeiro!`;\n  }\n}\n\n// 4. Cruza os dados e monta a entrega final de cada cliente\nreturn clientes.map(cliente => {\n  // Encontra a melhor opção do CSV para o perfil\n  const opcoes = investimentos.filter(\n    inv => inv.perfil?.toLowerCase() === cliente.perfil?.toLowerCase()\n  );\n  \n  const produtoMatch = opcoes.length > 0 ? opcoes[0] : { produto: 'Tesouro Direto', rentabilidade: '100% CDI' };\n\n  return {\n    json: {\n      nome: cliente.nome,\n      email: cliente.email,\n      saldo: cliente.saldo,\n      perfil: cliente.perfil,\n      produto_recomendado: produtoMatch.produto,\n      rentabilidade: produtoMatch.rentabilidade,\n      mensagem_consultor: gerarMensagemConsultor(\n        cliente.nome,\n        cliente.perfil,\n        cliente.saldo,\n        produtoMatch.produto,\n        produtoMatch.rentabilidade\n      )\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        208,
+        -48
+      ],
+      "id": "6d653572-e585-4c52-bde4-7369abba19d5",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "36b5bfdb-cd4a-49c1-8bca-de256cd48c67",
+              "name": "mensagem",
+              "value": "=Olá, {{ $json.nome }}! Vimos que seu perfil de investidor é {{ $json.perfil }} e seu saldo atual disponível é {{ $json.saldo }}. Recomendamos para a sua carteira o produto \"{{ $json.produto_sugerido }}\", com rentabilidade estimada de {{ $json.rentabilidade }}. Bons investimentos!",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        656,
+        -32
+      ],
+      "id": "95d011b6-3c0d-498d-9561-957aea7ebf1b",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        432,
+        -48
+      ],
+      "id": "c0a022bc-7e43-4d93-b949-2ffc56761fd8",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "amount": 2
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1376,
+        -32
+      ],
+      "id": "309510af-1e43-43cc-b63d-a5acef903bcc",
+      "name": "Wait",
+      "webhookId": "d6152ea0-7ea7-4e84-9bf5-fdd8dcb78050"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um consultor financeiro especialista e amigável.\nEscreva uma mensagem curta (máximo 3 frases) personalizada para o cliente abaixo, recomendando o produto sugerido de acordo com o saldo e perfil dele:\n\n- Nome: {{ $json.nome }}\n- Perfil: {{ $json.perfil }}\n- Saldo disponível: {{ $json.saldo }}\n- Produto indicado: {{ $json.produto_sugerido }} (Rentabilidade estimada: {{ $json.rentabilidade }})\n\nSeja encorajador, profissional e direto. Não use introduções como \"Aqui está sua mensagem\".",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        848,
+        -32
+      ],
+      "id": "23133fd3-193b-42ed-bdc2-2da78b90c0a3",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": "=openai/gpt-oss-20b",
+        "options": {
+          "maxTokensToSample": 400
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        896,
+        208
+      ],
+      "id": "c0ccfba1-4e5f-4d1a-84c7-62587fd4d5c0",
+      "name": "Groq Chat Model",
+      "credentials": {
+        "groqApi": {
+          "id": "al8xUxqz1PT34gFS",
+          "name": "Groq account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toRecipients": "={{ $('Edit Fields').item.json.email }}",
+        "subject": "Sua recomendação personalizada de investimentos",
+        "bodyContent": "={{ $json.text }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.microsoftOutlook",
+      "typeVersion": 2,
+      "position": [
+        1184,
+        -32
+      ],
+      "id": "1b499260-b2ae-4744-97ab-b376da1931a8",
+      "name": "Send a message",
+      "webhookId": "6fc27623-2f2b-4dda-bdd4-061d0ea27b3e",
+      "credentials": {
+        "microsoftOutlookOAuth2Api": {
+          "id": "9XE1clV1CqeuRKU8",
+          "name": "Microsoft Outlook account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Groq Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "24738d0b-fb81-41f8-ae13-d7b251924f52",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "56daba01ed7fc2c973f2628acbaa08183802bc294a5146bff7727e3fa841f733"
+  },
+  "nodeGroups": [],
+  "id": "44quEzHxIzz8FeXj",
+  "tags": []
+}
