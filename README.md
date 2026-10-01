@@ -1,4 +1,9 @@
-# Criando um Assistente de Investimentos com RPA e IA Generativa
+## 🎥 Demonstração em Vídeo
+
+Confira abaixo o vídeo demonstrando o funcionamento do fluxo de ponta a ponta (RPA + N8N + IA Generativa):
+
+[![Assistente de Investimentos - RPA e N8N]
+https://youtu.be/2BN6fD62Le4
 
 ## Descrição
 
